@@ -69,11 +69,11 @@ runs:
       run: |
         set -ex
         wkg oci push ${{ inputs.oci-reference-without-tag }}:${{ inputs.version }} ${{ inputs.file }}\
-          --annotation "org.opencontainers.image.description"=${{ inputs.description }} \
-          --annotation "org.opencontainers.image.source"=${{ inputs.source }} \
-          --annotation "org.opencontainers.image.url"=${{ inputs.homepage }} \
-          --annotation "org.opencontainers.image.version"=${{ inputs.version }} \
-          --annotation "org.opencontainers.image.licenses"=${{ inputs.licenses }}
+          --annotation "org.opencontainers.image.description"="${{ inputs.description }}" \
+          --annotation "org.opencontainers.image.source"="${{ inputs.source }}" \
+          --annotation "org.opencontainers.image.url"="${{ inputs.homepage }}" \
+          --annotation "org.opencontainers.image.version"="${{ inputs.version }}" \
+          --annotation "org.opencontainers.image.licenses"="${{ inputs.licenses }}"
 
     - uses: actions/upload-artifact@v4
       with:

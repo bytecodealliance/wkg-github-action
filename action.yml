@@ -1,17 +1,20 @@
-name: 'Verify  up-to-date'
-description: 'Verify WASI ABI files are up-to-date'
+name: 'wkg'
+description: 'Publish a Wasm package using `wkg`'
 
 inputs:
+  # Dependency versions
   wkg:
     description: 'version of `wkg` to use'
     required: false
 
-  # parameters to wkg
+  # Parameters to wkg
+  file:
+    description: The path to the file to push
+    required: true
   # TODO we don't like this but shortcut for quick first version
   oci-reference-without-tag:
     description: 'ghcr.io/webassembly/wasi/wasi-io'
     required: true
-
   # registry:
   #   description: 'OCI registry for the package, e.g. `ghcr.io`'
   #   required: false
@@ -38,38 +41,34 @@ inputs:
     description: 'Value for org.opencontainers.image.licenses'
     required: false
 
-  features:
-    description: 'comma-separated list of features to enable'
-    required: false
-    default: ''
-
-# cargo install wkg --force 
-
 runs:
   using: composite
   steps:
+   # Install `cargo-binstall`
+   # steps inlined from: https://github.com/cargo-bins/cargo-binstall/blob/main/action.yml
+   - name: Install cargo-binstall
+      if: runner.os != 'Windows'
+      shell: sh
+      run: curl -L --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.sh | bash
+    - name: Install cargo-binstall
+      if: runner.os == 'Windows'
+      run: Set-ExecutionPolicy Unrestricted -Scope Process; iex (iwr "https://raw.githubusercontent.com/cargo-bins/cargo-binstall/main/install-from-binstall-release.ps1").Content
+      shell: powershell
+
+    # Install action dependencies
     - name: Setup `wkg`
       shell: bash
       run: |
         set -ex
-        cargo install wkg --force
+        cargo binstall wkg
 
-    # TODO check if we should build a wit package
-    # TODO wit-dir param
-
-    # build wit package
-    - name: Generate documentation for each world
-      shell: bash
-      run: wkg wit build --wit-dir ./wit
-
-    # set var for wasi package 
-
-    - name: Generate documentation for each world
+    # Run the action
+    - name: Push the Wasm binary to the registry
       shell: bash
       if: ${{ inputs.worlds != '*' }}
       run: |
         set -ex
-        wkg oci push ${{ inputs.oci-reference-without-tag }}:${{ inputs.version }} \
+        wkg oci push ${{ inputs.oci-reference-without-tag }}:${{ inputs.version }} ${{ inputs.file }}\
           --annotation "org.opencontainers.image.description"=${{ inputs.description }} \
           --annotation "org.opencontainers.image.source"=${{ inputs.source }} \
           --annotation "org.opencontainers.image.url"=${{ inputs.homepage }} \

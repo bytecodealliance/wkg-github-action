@@ -1,0 +1,81 @@
+name: 'Verify  up-to-date'
+description: 'Verify WASI ABI files are up-to-date'
+
+inputs:
+  wkg:
+    description: 'version of `wkg` to use'
+    required: false
+
+  # parameters to wkg
+  # TODO we don't like this but shortcut for quick first version
+  oci-reference-without-tag:
+    description: 'ghcr.io/webassembly/wasi/wasi-io'
+    required: true
+
+  # registry:
+  #   description: 'OCI registry for the package, e.g. `ghcr.io`'
+  #   required: false
+  #   default: 'ghcr.io'
+  # namespace:
+  #   description: 'Namespace for the package, e.g. `wasi`'
+  #   required: false
+  # component:
+  #   description: 'Component name for the package, e.g. `wasi-io`'
+  #   required: true
+  description:
+    description: 'Value for org.opencontainers.image.description'
+    required: false
+  source:
+    description: 'Value for org.opencontainers.image.source'
+    required: false
+  homepage:
+    description: 'Value for org.opencontainers.image.homepage'
+    required: false
+  version:
+    description: 'Value for org.opencontainers.image.version without the `v` prefix'
+    required: true
+  licenses:
+    description: 'Value for org.opencontainers.image.licenses'
+    required: false
+
+  features:
+    description: 'comma-separated list of features to enable'
+    required: false
+    default: ''
+
+# cargo install wkg --force 
+
+runs:
+  using: composite
+  steps:
+    - name: Setup `wkg`
+      shell: bash
+      run: |
+        set -ex
+        cargo install wkg --force
+
+    # TODO check if we should build a wit package
+    # TODO wit-dir param
+
+    # build wit package
+    - name: Generate documentation for each world
+      shell: bash
+      run: wkg wit build --wit-dir ./wit
+
+    # set var for wasi package 
+
+    - name: Generate documentation for each world
+      shell: bash
+      if: ${{ inputs.worlds != '*' }}
+      run: |
+        set -ex
+        wkg oci push ${{ inputs.oci-reference-without-tag }}:${{ inputs.version }} \
+          --annotation "org.opencontainers.image.description"=${{ inputs.description }} \
+          --annotation "org.opencontainers.image.source"=${{ inputs.source }} \
+          --annotation "org.opencontainers.image.url"=${{ inputs.homepage }} \
+          --annotation "org.opencontainers.image.version"=${{ inputs.version }} \
+          --annotation "org.opencontainers.image.licenses"=${{ inputs.licenses }}
+
+    - uses: actions/upload-artifact@v4
+      with:
+        path: ${{ steps.package.outputs.package }}.wasm

@@ -1,10 +1,10 @@
-name: 'wkg'
-description: 'Publish a Wasm package using `wkg`'
+name: "wkg"
+description: "Publish a Wasm package using `wkg`"
 
 inputs:
   # Dependency versions
   wkg:
-    description: 'version of `wkg` to use'
+    description: "version of `wkg` to use"
     required: false
 
   # Parameters to wkg
@@ -13,7 +13,7 @@ inputs:
     required: true
   # TODO we don't like this but shortcut for quick first version
   oci-reference-without-tag:
-    description: 'ghcr.io/webassembly/wasi/wasi-io'
+    description: "ghcr.io/webassembly/wasi/wasi-io"
     required: true
   # registry:
   #   description: 'OCI registry for the package, e.g. `ghcr.io`'
@@ -26,20 +26,25 @@ inputs:
   #   description: 'Component name for the package, e.g. `wasi-io`'
   #   required: true
   description:
-    description: 'Value for org.opencontainers.image.description'
+    description: "Value for org.opencontainers.image.description"
     required: false
   source:
-    description: 'Value for org.opencontainers.image.source'
+    description: "Value for org.opencontainers.image.source"
     required: false
   homepage:
-    description: 'Value for org.opencontainers.image.homepage'
+    description: "Value for org.opencontainers.image.homepage"
     required: false
   version:
-    description: 'Value for org.opencontainers.image.version without the `v` prefix'
+    description: "Value for org.opencontainers.image.version without the `v` prefix"
     required: true
   licenses:
-    description: 'Value for org.opencontainers.image.licenses'
+    description: "Value for org.opencontainers.image.licenses"
     required: false
+
+outputs:
+  digest:
+    description: "wasm component digest"
+    value: ${{ steps.push.outputs.digest }}
 
 runs:
   using: composite
@@ -64,16 +69,23 @@ runs:
 
     # Run the action
     - name: Push the Wasm binary to the registry
+      id: push
       shell: bash
       if: ${{ inputs.worlds != '*' }}
       run: |
         set -ex
-        wkg oci push ${{ inputs.oci-reference-without-tag }}:${{ inputs.version }} ${{ inputs.file }}\
+        output=$(wkg oci push ${{ inputs.oci-reference-without-tag }}:${{ inputs.version }} ${{ inputs.file }}\
           --annotation "org.opencontainers.image.description"="${{ inputs.description }}" \
           --annotation "org.opencontainers.image.source"="${{ inputs.source }}" \
           --annotation "org.opencontainers.image.url"="${{ inputs.homepage }}" \
           --annotation "org.opencontainers.image.version"="${{ inputs.version }}" \
-          --annotation "org.opencontainers.image.licenses"="${{ inputs.licenses }}"
+          --annotation "org.opencontainers.image.licenses"="${{ inputs.licenses }}")
+
+          digest=$(echo "$output" | grep -oP 'digest: \K.*')
+
+          echo "extracted digest: $digest"
+
+          echo "digest=$digest" >> $GITHUB_OUTPUT
 
     - uses: actions/upload-artifact@v4
       with:

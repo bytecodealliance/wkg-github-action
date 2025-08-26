@@ -15,16 +15,6 @@ inputs:
   oci-reference-without-tag:
     description: "ghcr.io/webassembly/wasi/wasi-io"
     required: true
-  # registry:
-  #   description: 'OCI registry for the package, e.g. `ghcr.io`'
-  #   required: false
-  #   default: 'ghcr.io'
-  # namespace:
-  #   description: 'Namespace for the package, e.g. `wasi`'
-  #   required: false
-  # component:
-  #   description: 'Component name for the package, e.g. `wasi-io`'
-  #   required: true
   description:
     description: "Value for org.opencontainers.image.description"
     required: false
@@ -86,7 +76,3 @@ runs:
           echo "extracted digest: $digest"
 
           echo "digest=$digest" >> $GITHUB_OUTPUT
-
-    - uses: actions/upload-artifact@v4
-      with:
-        path: ${{ steps.package.outputs.package }}.wasm

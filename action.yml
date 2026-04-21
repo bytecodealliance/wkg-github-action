@@ -53,9 +53,15 @@ runs:
     # Install action dependencies
     - name: Setup `wkg`
       shell: bash
+      env:
+        WKG_VERSION: ${{ inputs.wkg }}
       run: |
         set -ex
-        cargo binstall wkg
+        if [ -n "$WKG_VERSION" ]; then
+          cargo binstall "wkg@$WKG_VERSION"
+        else
+          cargo binstall wkg
+        fi
 
     # Run the action
     - name: Push the Wasm binary to the registry
